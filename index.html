@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>딜러앱 CRM PUSH 캠페인 주간 리포트</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<link rel="stylesheet" as="style" crossorigin
+  href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+<style>
+  * { box-sizing: border-box; }
+  :root {
+    --point2: #3358D4;
+    --point1: #7BA7F7;
+    --warning: #F05C6E;
+    --warning-sub: #FADADD;
+    --point: #F47B20;
+    --point-sub: #F9C9B0;
+    --gray0: #FAFAFA;
+    --gray1: #F2F2F3;
+    --gray2: #E8E9EB;
+    --gray3: #D1D3D6;
+    --gray4: #9CA0A8;
+    --gray5: #6B7078;
+    --black: #191F28;
+    --shadow-sm: 0 1px 2px rgba(25,31,40,0.04), 0 1px 1px rgba(25,31,40,0.03);
+    --shadow-md: 0 8px 24px rgba(25,31,40,0.08), 0 2px 6px rgba(25,31,40,0.04);
+  }
+  html, body {
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #ffffff;
+    color: var(--black);
+  }
+  body { margin: 0; padding: 36px 40px 64px 40px; }
+
+  .header { margin-bottom: 24px; }
+  .header h1 {
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0 0 6px 0;
+    letter-spacing: -0.3px;
+  }
+  .header p {
+    font-size: 13px;
+    color: var(--gray5);
+    margin: 0;
+  }
+  #updatedAt { color: var(--gray4); }
+
+  .legend-row {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin: 18px 0 26px 0;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12.5px;
+    color: var(--gray5);
+    font-weight: 500;
+  }
+  .legend-dot { width: 9px; height: 9px; border-radius: 3px; display: inline-block; }
+
+  .section-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--point2);
+    margin: 4px 0 14px 0;
+    letter-spacing: -0.2px;
+  }
+
+  .top-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-bottom: 36px;
+  }
+  .grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+  }
+
+  .card {
+    border: 1px solid var(--gray2);
+    border-radius: 16px;
+    padding: 18px 18px 12px 18px;
+    background: #fff;
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.18s cubic-bezier(.25,.8,.25,1), box-shadow 0.18s cubic-bezier(.25,.8,.25,1), border-color 0.18s ease;
+  }
+  .card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--gray3);
+  }
+
+  .card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px;
+  }
+  .card h3 {
+    font-size: 13.5px;
+    margin: 0;
+    font-weight: 700;
+    letter-spacing: -0.2px;
+  }
+  .r2-badge {
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 20px;
+    background: var(--gray1);
+    color: var(--gray5);
+    white-space: nowrap;
+  }
+  .r2-strong { background: var(--point-sub); color: var(--point); }
+
+  .card-sub {
+    font-size: 11px;
+    color: var(--gray4);
+    margin: 0 0 10px 0;
+  }
+
+  canvas { max-height: 210px; }
+
+  .skeleton {
+    height: 210px;
+    border-radius: 10px;
+    background: linear-gradient(90deg, var(--gray1) 25%, var(--gray0) 37%, var(--gray1) 63%);
+    background-size: 400% 100%;
+    animation: shimmer 1.4s ease infinite;
+  }
+  @keyframes shimmer {
+    0% { background-position: 100% 50%; }
+    100% { background-position: 0 50%; }
+  }
+
+  .footer-note {
+    font-size: 12px;
+    color: var(--gray4);
+    margin-top: 36px;
+    padding-top: 16px;
+    border-top: 1px solid var(--gray2);
+    line-height: 1.7;
+  }
+
+  .range-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 26px 0;
+    padding: 10px 14px;
+    background: var(--gray0);
+    border: 1px solid var(--gray2);
+    border-radius: 12px;
+    width: fit-content;
+  }
+  .range-label {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--gray5);
+    margin-right: 4px;
+  }
+  .range-row select {
+    font-family: 'Pretendard', sans-serif;
+    font-size: 12.5px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--gray3);
+    background: #fff;
+    color: var(--black);
+    cursor: pointer;
+    transition: border-color 0.15s ease;
+  }
+  .range-row select:hover { border-color: var(--point2); }
+  .range-row select:focus { outline: none; border-color: var(--point2); }
+  .range-sep { color: var(--gray4); font-size: 12px; }
+  .range-reset {
+    font-family: 'Pretendard', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: none;
+    background: var(--point-sub);
+    color: var(--point);
+    cursor: pointer;
+    margin-left: 4px;
+    transition: background 0.15s ease, transform 0.12s ease;
+  }
+  .range-reset:hover { background: #F5B583; transform: translateY(-1px); }
+  .range-reset:active { transform: translateY(0); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>딜러앱 CRM PUSH 캠페인 주간 리포트</h1>
+  <p>마지막 갱신 <span id="updatedAt">-</span></p>
+</div>
+
+<div class="legend-row" id="legendRow"></div>
+
+<div class="range-row">
+  <span class="range-label">기간</span>
+  <select id="rangeStart"></select>
+  <span class="range-sep">~</span>
+  <select id="rangeEnd"></select>
+  <button id="rangeReset" class="range-reset">전체</button>
+</div>
+
+<div class="section-title">전체 현황</div>
+<div class="top-row">
+  <div class="card">
+    <h3>전체 합산 Open Rate 추이</h3>
+    <div id="rateWrap" class="skeleton"></div>
+  </div>
+  <div class="card">
+    <h3>#Sends (Unique Recipients) &middot; 캠페인별 스택</h3>
+    <div id="sendsWrap" class="skeleton"></div>
+  </div>
+  <div class="card">
+    <h3>#Opens (Direct Opens) &middot; 캠페인별 스택</h3>
+    <div id="opensWrap" class="skeleton"></div>
+  </div>
+</div>
+
+<div class="section-title">캠페인별 상세 (Sends vs Open Rate)</div>
+<div class="grid-3" id="perCampaignGrid"></div>
+
+<div class="footer-note">
+  · R² 배지는 최근 추이의 선형회귀 적합도입니다. 0.5 이상이면 강조 표시됩니다.<br>
+  · 데이터는 매일 오전 9시(KST)에 GitHub Actions로 자동 갱신됩니다.<br>
+  · Open Rate가 5% 미만인 주차는 차트 상 빨간 포인트로 표시됩니다.
+</div>
+
+<script>
+const COLORS = {
+  "매물 입고 알림": "#4285F4",
+  "생애 최초": "#26A69A",
+  "최빈 입찰 CA": "#A67C52",
+  "최신 낙찰 CA": "#FF1493",
+  "인기 차량 출품 안내": "#CCFF00",
+  "입찰 독려_입찰경험O": "#3358D4",
+  "입찰 독려_매입딜러_입찰경험X": "#7BA7F7",
+  "입찰 독려_광고딜러_입찰경험X": "#8B3DA6"
+};
+
+function computeR2(values) {
+  const n = values.length;
+  if (n < 3) return 0;
+  const xs = values.map((_, i) => i);
+  const meanX = xs.reduce((a,b)=>a+b,0)/n;
+  const meanY = values.reduce((a,b)=>a+b,0)/n;
+  let num = 0, denX = 0, denY = 0;
+  for (let i = 0; i < n; i++) {
+    const dx = xs[i]-meanX, dy = values[i]-meanY;
+    num += dx*dy; denX += dx*dx; denY += dy*dy;
+  }
+  if (denX === 0 || denY === 0) return 0;
+  const r = num / Math.sqrt(denX*denY);
+  return Math.round(r*r*1000)/1000;
+}
+
+Chart.defaults.font.family = "'Pretendard', sans-serif";
+Chart.defaults.color = '#6B7078';
+
+const commonHoverPlugins = {
+  legend: { display: false },
+  tooltip: {
+    backgroundColor: '#191F28',
+    titleFont: { family: 'Pretendard', weight: '700', size: 11 },
+    bodyFont: { family: 'Pretendard', size: 11 },
+    padding: 10,
+    cornerRadius: 8,
+    displayColors: true,
+    boxPadding: 4
+  }
+};
+
+let RAW_DATA = null;
+let charts = [];
+
+function destroyCharts() {
+  charts.forEach(c => c.destroy());
+  charts = [];
+}
+
+function renderCharts(startIdx, endIdx) {
+  destroyCharts();
+  const weeks = RAW_DATA.weeks.slice(startIdx, endIdx + 1);
+  const campaigns = RAW_DATA.campaigns;
+  const names = Object.keys(campaigns);
+  const shortWeeks = weeks.map(w => w.slice(5));
+
+  const sliceFor = (n) => campaigns[n].slice(startIdx, endIdx + 1);
+
+  const agg = weeks.map((_, i) => {
+    const totalSends = names.reduce((s, n) => s + sliceFor(n)[i].sends, 0);
+    const totalOpens = names.reduce((s, n) => s + sliceFor(n)[i].opens, 0);
+    return totalSends ? Math.round(totalOpens/totalSends*10000)/100 : 0;
+  });
+
+  ['sendsChart','opensChart','rateChart'].forEach(id => {
+    const old = document.getElementById(id);
+    if (old) old.remove();
+  });
+  document.getElementById('rateHost').innerHTML = '<canvas id="rateChart"></canvas>';
+  document.getElementById('sendsHost').innerHTML = '<canvas id="sendsChart"></canvas>';
+  document.getElementById('opensHost').innerHTML = '<canvas id="opensChart"></canvas>';
+
+  charts.push(new Chart(document.getElementById('rateChart'), {
+    type: 'line',
+    data: {
+      labels: shortWeeks,
+      datasets: [{
+        label: '합산 Open Rate (%)',
+        data: agg,
+        borderColor: '#F05C6E',
+        backgroundColor: 'rgba(240,92,110,0.08)',
+        fill: true,
+        tension: 0.35,
+        pointRadius: 0,
+        pointHoverRadius: 5,
+        pointHoverBackgroundColor: '#F05C6E',
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: commonHoverPlugins,
+      interaction: { intersect: false, mode: 'index' },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 9 } } },
+        y: { grid: { color: '#F2F2F3' }, ticks: { font: { size: 9 }, callback: v => v + '%' } }
+      }
+    }
+  }));
+
+  charts.push(new Chart(document.getElementById('sendsChart'), {
+    type: 'bar',
+    data: {
+      labels: shortWeeks,
+      datasets: names.map(n => ({
+        label: n,
+        data: sliceFor(n).map(d => d.sends),
+        backgroundColor: COLORS[n] || '#999',
+        borderRadius: 3,
+        stack: 'sends'
+      }))
+    },
+    options: {
+      responsive: true,
+      plugins: commonHoverPlugins,
+      scales: {
+        x: { stacked: true, grid: { display: false }, ticks: { font: { size: 9 } } },
+        y: { stacked: true, grid: { color: '#F2F2F3' }, ticks: { font: { size: 9 } } }
+      }
+    }
+  }));
+
+  charts.push(new Chart(document.getElementById('opensChart'), {
+    type: 'bar',
+    data: {
+      labels: shortWeeks,
+      datasets: names.map(n => ({
+        label: n,
+        data: sliceFor(n).map(d => d.opens),
+        backgroundColor: COLORS[n] || '#999',
+        borderRadius: 3,
+        stack: 'opens'
+      }))
+    },
+    options: {
+      responsive: true,
+      plugins: commonHoverPlugins,
+      scales: {
+        x: { stacked: true, grid: { display: false }, ticks: { font: { size: 9 } } },
+        y: { stacked: true, grid: { color: '#F2F2F3' }, ticks: { font: { size: 9 } } }
+      }
+    }
+  }));
+
+  const grid = document.getElementById('perCampaignGrid');
+  grid.innerHTML = '';
+  names.forEach(n => {
+    const safeId = n.replace(/[^a-zA-Z0-9가-힣]/g, '_');
+    const r2 = computeR2(sliceFor(n).map(d => d.rate));
+    const badgeClass = r2 >= 0.5 ? 'r2-badge r2-strong' : 'r2-badge';
+    grid.insertAdjacentHTML('beforeend', `
+      <div class="card">
+        <div class="card-head">
+          <h3>${n}</h3>
+          <span class="${badgeClass}">R² ${r2}</span>
+        </div>
+        <p class="card-sub">Open Rate 추이 선형적합도</p>
+        <canvas id="c_${safeId}"></canvas>
+      </div>
+    `);
+  });
+
+  names.forEach(n => {
+    const safeId = n.replace(/[^a-zA-Z0-9가-힣]/g, '_');
+    const ctx = document.getElementById('c_' + safeId);
+    charts.push(new Chart(ctx, {
+      data: {
+        labels: shortWeeks,
+        datasets: [
+          {
+            type: 'bar',
+            label: 'Sends',
+            data: sliceFor(n).map(d => d.sends),
+            backgroundColor: (COLORS[n] || '#999') + 'CC',
+            borderRadius: 3,
+            yAxisID: 'y'
+          },
+          {
+            type: 'line',
+            label: 'Open Rate (%)',
+            data: sliceFor(n).map(d => d.rate),
+            borderColor: '#F05C6E',
+            backgroundColor: '#F05C6E',
+            yAxisID: 'y1',
+            tension: 0.35,
+            pointRadius: 0,
+            pointHoverRadius: 5,
+            borderWidth: 2
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        interaction: { intersect: false, mode: 'index' },
+        plugins: {
+          legend: { display: true, labels: { font: { size: 9 }, boxWidth: 8, usePointStyle: true } },
+          tooltip: commonHoverPlugins.tooltip
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { font: { size: 8 } } },
+          y: { type: 'linear', position: 'left', grid: { color: '#F2F2F3' }, ticks: { font: { size: 8 } } },
+          y1: { type: 'linear', position: 'right', ticks: { font: { size: 8 }, callback: v => v + '%' }, grid: { drawOnChartArea: false } }
+        }
+      }
+    }));
+  });
+}
+
+function setupRangePicker() {
+  const weeks = RAW_DATA.weeks;
+  const startSel = document.getElementById('rangeStart');
+  const endSel = document.getElementById('rangeEnd');
+  weeks.forEach((w, i) => {
+    startSel.insertAdjacentHTML('beforeend', `<option value="${i}">${w}</option>`);
+    endSel.insertAdjacentHTML('beforeend', `<option value="${i}">${w}</option>`);
+  });
+  startSel.value = 0;
+  endSel.value = weeks.length - 1;
+
+  function onChange() {
+    let s = parseInt(startSel.value, 10);
+    let e = parseInt(endSel.value, 10);
+    if (s > e) { [s, e] = [e, s]; }
+    renderCharts(s, e);
+  }
+  startSel.addEventListener('change', onChange);
+  endSel.addEventListener('change', onChange);
+  document.getElementById('rangeReset').addEventListener('click', () => {
+    startSel.value = 0;
+    endSel.value = weeks.length - 1;
+    renderCharts(0, weeks.length - 1);
+  });
+}
+
+async function loadReport() {
+  try {
+    const res = await fetch('./data.json?t=' + Date.now());
+    RAW_DATA = await res.json();
+  } catch (e) {
+    document.body.insertAdjacentHTML('afterbegin', '<p style="color:#F05C6E">데이터를 불러오지 못했어요. data.json을 확인해주세요.</p>');
+    return;
+  }
+
+  document.getElementById('updatedAt').textContent = RAW_DATA.updated_at || RAW_DATA.weeks[RAW_DATA.weeks.length-1];
+
+  const legendRow = document.getElementById('legendRow');
+  Object.keys(RAW_DATA.campaigns).forEach(n => {
+    legendRow.insertAdjacentHTML('beforeend',
+      `<div class="legend-item"><span class="legend-dot" style="background:${COLORS[n] || '#999'}"></span>${n}</div>`);
+  });
+
+  document.getElementById('rateWrap').outerHTML = '<div id="rateHost"><canvas id="rateChart"></canvas></div>';
+  document.getElementById('sendsWrap').outerHTML = '<div id="sendsHost"><canvas id="sendsChart"></canvas></div>';
+  document.getElementById('opensWrap').outerHTML = '<div id="opensHost"><canvas id="opensChart"></canvas></div>';
+
+  setupRangePicker();
+  renderCharts(0, RAW_DATA.weeks.length - 1);
+}
+
+loadReport();
+</script>
+
+</body>
+</html>
