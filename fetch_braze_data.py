@@ -46,8 +46,14 @@ DATA_FILE = os.path.join(os.path.dirname(__file__), "data.json")
 def braze_get(path, params):
     url = f"{BRAZE_REST_ENDPOINT}{path}?" + "&".join(f"{k}={v}" for k, v in params.items())
     req = urllib.request.Request(url, headers={"Authorization": f"Bearer {BRAZE_API_KEY}"})
-    with urllib.request.urlopen(req, timeout=30) as resp:
-        return json.loads(resp.read().decode())
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            return json.loads(resp.read().decode())
+    except urllib.error.HTTPError as e:
+        body = e.read().decode(errors="replace")
+        print(f"  [HTTP {e.code}] {url}")
+        print(f"  응답 본문: {body}")
+        raise
 
 
 def week_key(date_str):
